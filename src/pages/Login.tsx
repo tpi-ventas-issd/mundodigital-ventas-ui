@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, {  useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/auth'
 import { useToast } from '../components/Toast'
@@ -24,11 +24,7 @@ export function LoginPage() {
     }
   }
 
-  useEffect(() => {
-    if (authService.isAuthenticated()) {
-      navigate('/ventas/nueva', { replace: true })
-    }
-  }, [navigate])
+ 
 
   return (
     <div style={{

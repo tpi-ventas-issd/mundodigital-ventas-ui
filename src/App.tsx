@@ -20,13 +20,13 @@ export default function App() {
               </PrivateRoute>
             }
           >
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/" element={<Navigate to="/ventas/nueva" replace />} />
             <Route index element={<Navigate to="/ventas/nueva" replace />} />
             <Route path="ventas/nueva" element={<NuevaVentaPage />} />
             <Route path="ventas"       element={<HistorialVentasPage />} />
             <Route path="clientes"     element={<ClientesPage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/ventas/nueva" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
     </ToastProvider>
