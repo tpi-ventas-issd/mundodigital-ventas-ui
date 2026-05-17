@@ -1,9 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import {
-  ventasService,
-  Cliente, Producto, DetalleVentaPayload, VentaRegistrada,
-  formatPeso, formatFecha,
-} from '../services/ventas'
+import { useEffect, useState } from 'react'
+import type { Cliente, Producto, DetalleVentaPayload, VentaRegistrada } from '../services/ventas'
+import { ventasService, formatPeso, formatFecha } from '../services/ventas'
 import { useToast } from '../components/Toast'
 
 // ─── Sub-types ──────────────────────────────────────────────────────────────────

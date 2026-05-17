@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { ventasService, VentaRegistrada, formatPeso, formatFecha } from '../services/ventas'
+import { useEffect, useState } from 'react'
+import type { VentaRegistrada } from '../services/ventas'
+import { ventasService, formatPeso, formatFecha } from '../services/ventas'
 import { useToast } from '../components/Toast'
 
 export function HistorialVentasPage() {
