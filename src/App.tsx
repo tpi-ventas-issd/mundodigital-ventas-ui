@@ -20,6 +20,7 @@ export default function App() {
               </PrivateRoute>
             }
           >
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route index element={<Navigate to="/ventas/nueva" replace />} />
             <Route path="ventas/nueva" element={<NuevaVentaPage />} />
             <Route path="ventas"       element={<HistorialVentasPage />} />
