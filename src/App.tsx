@@ -6,6 +6,9 @@ import { LoginPage } from './pages/Login'
 import { NuevaVentaPage } from './pages/NuevaVenta'
 import { HistorialVentasPage } from './pages/HistorialVentas'
 import { ClientesPage } from './pages/Clientes'
+import RegistrarCliente from './pages/registrarCliente'
+
+
 
 export default function App() {
   return (
@@ -25,8 +28,12 @@ export default function App() {
             <Route path="ventas/nueva" element={<NuevaVentaPage />} />
             <Route path="ventas"       element={<HistorialVentasPage />} />
             <Route path="clientes"     element={<ClientesPage />} />
+
+            <Route path="clientes/registrar-cliente" element={<RegistrarCliente />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
+
+
         </Routes>
       </BrowserRouter>
     </ToastProvider>

@@ -15,6 +15,9 @@ export function HistorialVentasPage() {
       .finally(() => setLoading(false))
   }, [])
 
+
+
+  
   return (
     <div style={{ padding: '32px 40px', maxWidth: 900, margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
@@ -48,7 +51,7 @@ export function HistorialVentasPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['ID', 'Fecha', 'Cliente ID', 'Items', 'Total', 'Estado'].map(h => (
+                {['ID', 'Fecha', 'Cliente ID', 'Items', 'Total', 'Estado', 'Acciones'].map(h => (
                   <th key={h} style={{
                     padding: '12px 16px',
                     color: 'var(--muted)',
@@ -74,7 +77,7 @@ export function HistorialVentasPage() {
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>{formatFecha(v.fecha)}</td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>{v.idcliente}</td>
                   <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 12 }}>
-                    {v.detalles.reduce((s, d) => s + d.cantidad, 0)} uds.
+                    {(v.detalles ?? []).reduce((s, d) => s + d.cantidad, 0)} uds.
                   </td>
                   <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--accent)' }}>
                     {formatPeso(v.total)}
@@ -91,6 +94,37 @@ export function HistorialVentasPage() {
                       {v.estado}
                     </span>
                   </td>
+                  <td style={{ padding: '12px 16px' }}>
+  <div style={{ display: 'flex', gap: 8 }}>
+
+    <button
+      style={{
+        border: 'none',
+        background: '#2563eb22',
+        color: '#2563eb',
+        borderRadius: 8,
+        padding: '6px 10px',
+        cursor: 'pointer',
+      }}
+    >
+      🔍
+    </button>
+
+    <button
+      style={{
+        border: 'none',
+        background: '#dc262622',
+        color: '#dc2626',
+        borderRadius: 8,
+        padding: '6px 10px',
+        cursor: 'pointer',
+      }}
+    >
+      🗑
+    </button>
+
+  </div>
+</td>
                 </tr>
               ))}
             </tbody>
@@ -100,3 +134,5 @@ export function HistorialVentasPage() {
     </div>
   )
 }
+
+

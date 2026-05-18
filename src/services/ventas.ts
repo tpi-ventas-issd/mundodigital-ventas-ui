@@ -142,7 +142,27 @@ export const ventasService = {
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 export const formatPeso = (n: number) =>
-  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
+ new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
 
-export const formatFecha = (iso: string) =>
-  new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso))
+//export const formatFecha = (iso: string) =>
+  //new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso))
+
+
+
+
+export const formatFecha = (iso?: string) => {
+
+  if (!iso) return '-'
+
+  const fecha = new Date(iso)
+
+  if (isNaN(fecha.getTime())) {
+    return '-'
+  }
+
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'short',
+    timeStyle: 'short'
+  }).format(fecha)
+
+}
