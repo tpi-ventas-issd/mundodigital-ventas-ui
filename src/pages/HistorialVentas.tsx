@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Cliente, VentaRegistrada } from '../services/ventas'
+import type { Cliente, Producto, VentaRegistrada } from '../services/ventas'
 import { ventasService, formatPeso, formatFecha } from '../services/ventas'
 import { useToast } from '../components/Toast'
 
@@ -14,15 +14,15 @@ const estadoColor = (estado: string) => {
 // ─── Modal de detalle ───────────────────────────────────────────────────────────
 
 function DetalleModal({
-  venta,
-  cliente,
-  onClose,
+  venta, cliente, productos, onClose,
 }: {
   venta: VentaRegistrada
   cliente: Cliente | undefined
+  productos: Producto[]
   onClose: () => void
 }) {
   const col = estadoColor(venta.estado)
+
 
   return (
     <div
@@ -78,14 +78,17 @@ function DetalleModal({
         {/* Productos */}
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginBottom: 16 }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', marginBottom: 12 }}>PRODUCTOS</div>
-          {(venta.detalleventas ?? []).map(d => (
-            <div key={d.iddetalle} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
-              <span style={{ color: 'var(--muted)' }}>ID #{d.idproducto} ×{d.cantidad}</span>
-              <span style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>
-                {formatPeso(Number(d.preciounitario) * d.cantidad)}
-              </span>
-            </div>
-          ))}
+          {(venta.detalleventas ?? []).map(d => {
+            const nombreProd = productos.find(p => p.idproducto === d.idproducto)?.nombre ?? `ID #${d.idproducto}`
+            return (
+              <div key={d.iddetalle} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 13 }}>
+                <span style={{ color: 'var(--muted)' }}>{nombreProd} ×{d.cantidad}</span>
+                <span style={{ fontFamily: 'var(--mono)', fontSize: 12 }}>
+                  {formatPeso(Number(d.preciounitario) * d.cantidad)}
+                </span>
+              </div>
+            )
+          })}
         </div>
 
         {/* Total */}
@@ -164,16 +167,19 @@ export function HistorialVentasPage() {
   const [ventaDetalle, setVentaDetalle] = useState<VentaRegistrada | null>(null)
   const [ventaCancelar, setVentaCancelar] = useState<VentaRegistrada | null>(null)
   const [cancelando, setCancelando] = useState(false)
+  const [productos, setProductos] = useState<Producto[]>([])
 
   const cargar = () => {
     setLoading(true)
     Promise.all([
       ventasService.getVentas(),
       ventasService.getClientes(),
-    ]).then(([vs, cs]) => {
+      ventasService.getProductos(),
+    ]).then(([vs, cs, ps]) => {
       // Orden: más reciente primero
       setVentas([...vs].sort((a, b) => b.idventa - a.idventa))
       setClientes(cs)
+      setProductos(ps)
     }).catch(() => toast('Error al cargar historial', 'error'))
       .finally(() => setLoading(false))
   }
@@ -300,6 +306,7 @@ export function HistorialVentasPage() {
           venta={ventaDetalle}
           cliente={clientes.find(c => c.idcliente === ventaDetalle.idcliente)}
           onClose={() => setVentaDetalle(null)}
+          productos={productos}
         />
       )}
       {ventaCancelar && (
