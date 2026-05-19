@@ -74,13 +74,13 @@ export function HistorialVentasPage() {
                   <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 12, color: 'var(--muted)' }}>
                     #{v.idventa}
                   </td>
-                  <td style={{ padding: '12px 16px', fontSize: 13 }}>{formatFecha(v.fecha)}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 13 }}>{formatFecha(v.fechaventa)}</td>
                   <td style={{ padding: '12px 16px', fontSize: 13 }}>{v.idcliente}</td>
                   <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 12 }}>
-                    {(v.detalles ?? []).reduce((s, d) => s + d.cantidad, 0)} uds.
+                    {(v.detalleventas ?? []).reduce((s, d) => s + d.cantidad, 0)} uds.
                   </td>
                   <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--accent)' }}>
-                    {formatPeso(v.total)}
+                    {formatPeso(v.total? 0 : 0)}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <span style={{

@@ -5,7 +5,10 @@ import { api } from './api'
 export interface Cliente {
   idcliente: number
   nombre: string
+  apellido?: string
   email: string
+  telefono?: string
+  direccion?: string
 }
 
 export interface Producto {
@@ -17,30 +20,33 @@ export interface Producto {
 }
 
 export interface DetalleVentaPayload {
-  idproducto: number
+  idProducto: number
   cantidad: number
-  preciounitario: number
 }
 
 export interface RegistrarVentaPayload {
-  idcliente: number
+  idCliente: number
   detalles: DetalleVentaPayload[]
-  idcupon?: string
+  direccionEntrega?: string | null
+  indicacionesEntrega?: string | null
 }
 
 export interface VentaRegistrada {
   idventa: number
   idcliente: number
-  fecha: string
-  total: number
-  estado: 'Realizada' | 'Cancelada'
-  detalles: Array<{
+  fechaventa?: string
+  subtotal: number | string
+  descuento?: number | string
+  total: number | string
+  estado: string
+  direccionentrega?: string
+  indicacionesentrega?: string
+  detalleventas: Array<{
     iddetalle: number
+    idventa: number
     idproducto: number
     cantidad: number
-    preciounitario: number
-    subtotal: number
-    producto: { nombre: string }
+    preciounitario: number | string
   }>
 }
 
@@ -105,25 +111,37 @@ export const ventasService = {
   async registrarVenta(payload: RegistrarVentaPayload): Promise<VentaRegistrada> {
     if (USE_MOCK) {
       for (const det of payload.detalles) {
-        const prod = MOCK_PRODUCTOS.find(p => p.idproducto === det.idproducto)!
+        const prod = MOCK_PRODUCTOS.find(p => p.idproducto === det.idProducto)!
         if (prod.stockactual < det.cantidad)
           throw new Error(`Stock insuficiente para "${prod.nombre}"`)
         prod.stockactual -= det.cantidad
       }
       const venta: VentaRegistrada = {
         idventa: ++mockVentaId,
-        idcliente: payload.idcliente,
-        fecha: new Date().toISOString(),
-        total: payload.detalles.reduce((sum, d) => sum + d.cantidad * d.preciounitario, 0),
-        estado: 'Realizada',
-        detalles: payload.detalles.map((d, i) => ({
-          iddetalle: i + 1,
-          idproducto: d.idproducto,
-          cantidad: d.cantidad,
-          preciounitario: d.preciounitario,
-          subtotal: d.cantidad * d.preciounitario,
-          producto: { nombre: MOCK_PRODUCTOS.find(p => p.idproducto === d.idproducto)!.nombre },
-        })),
+        idcliente: payload.idCliente,
+        fechaventa: new Date().toISOString(),
+        subtotal: payload.detalles.reduce((sum, d) => {
+          const precio = MOCK_PRODUCTOS.find(p => p.idproducto === d.idProducto)?.precio ?? 0
+          return sum + d.cantidad * precio
+        }, 0),
+        descuento: 0,
+        total: payload.detalles.reduce((sum, d) => {
+          const precio = MOCK_PRODUCTOS.find(p => p.idproducto === d.idProducto)?.precio ?? 0
+          return sum + d.cantidad * precio
+        }, 0),
+        estado: 'Pendiente_de_entrega',
+        direccionentrega: payload.direccionEntrega ?? undefined,
+        indicacionesentrega: payload.indicacionesEntrega ?? undefined,
+        detalleventas: payload.detalles.map((d, i) => {
+          const prod = MOCK_PRODUCTOS.find(p => p.idproducto === d.idProducto)!
+          return {
+            iddetalle: i + 1,
+            idventa: mockVentaId,
+            idproducto: d.idProducto,
+            cantidad: d.cantidad,
+            preciounitario: prod.precio,
+          }
+        }),
       }
       MOCK_VENTAS.unshift(venta)
       return venta
@@ -142,27 +160,14 @@ export const ventasService = {
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 
 export const formatPeso = (n: number) =>
- new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
-
-//export const formatFecha = (iso: string) =>
-  //new Intl.DateTimeFormat('es-AR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(iso))
-
-
-
+  new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n)
 
 export const formatFecha = (iso?: string) => {
-
   if (!iso) return '-'
-
   const fecha = new Date(iso)
-
-  if (isNaN(fecha.getTime())) {
-    return '-'
-  }
-
+  if (isNaN(fecha.getTime())) return '-'
   return new Intl.DateTimeFormat('es-AR', {
     dateStyle: 'short',
-    timeStyle: 'short'
+    timeStyle: 'short',
   }).format(fecha)
-
 }
