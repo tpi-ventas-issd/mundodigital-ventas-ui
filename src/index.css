@@ -1,22 +1,22 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:        #0c0c0e;
-  --surface:   #141417;
-  --surface2:  #1c1c21;
-  --border:    #2a2a32;
-  --border2:   #38383f;
-  --text:      #f0f0f2;
-  --muted:     #8888a0;
-  --accent:    #5b8af0;   /* G1 identity: azul */
-  --accent-dim:#2a3f6e;
-  --success:   #3ecf6a;
-  --danger:    #f05b5b;
-  --warn:      #f0b45b;
+  --bg:        #F8F8F6;
+  --surface:   #FFFFFF;
+  --surface2:  #F1EFE8;
+  --border:    #D3D1C7;
+  --border2:   #B4B2A9;
+  --text:      #000000;
+  --muted:     #888780;
+  --accent:    #185FA5;
+  --accent-dim:#B5D4F4;
+  --success:   #3B6D11;
+  --danger:    #A32D2D;
+  --warn:      #BA7517;
   --mono:      'DM Mono', monospace;
-  --sans:      'DM Sans', sans-serif;
-  --radius:    8px;
-  --radius-lg: 14px;
+  --sans:      Arial, sans-serif;
+  --radius:    0px;
+  --radius-lg: 0px;
 }
 
 html, body, #root {

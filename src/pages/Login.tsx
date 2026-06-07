@@ -44,13 +44,13 @@ export function LoginPage() {
       }}>
         <div style={{ marginBottom: 28 }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.12em', marginBottom: 6 }}>
-            MUNDODIGITAL S.A.
+           Login
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 500, color: 'var(--text)' }}>
-            Ventas <span style={{ color: 'var(--accent)' }}>G1</span>
+             <span style={{ color: 'var(--accent)' }}>Módulo de gestión de ventas</span>
           </h1>
           <p style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>
-            Módulo de gestión de ventas
+            grupo 1
           </p>
         </div>
 

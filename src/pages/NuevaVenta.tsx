@@ -499,15 +499,17 @@ export function NuevaVentaPage() {
                     onClick={() => agregarProducto(p)}
                     disabled={p.stockactual === 0}
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: 8,
-                      border: 'none',
-                      background: p.stockactual === 0 ? 'var(--border)' : 'var(--surface)',
-                      color: p.stockactual === 0 ? 'var(--muted)' : 'var(--text)',
-                      cursor: p.stockactual === 0 ? 'not-allowed' : 'pointer',
-                      fontSize: 12,
-                      fontWeight: 600,
-                      border2: '1px solid var(--border2)',
+                      marginTop: 6,
+                        padding: '6px 10px',
+                        borderRadius: 0,
+                        border: 'none',
+                        background: '#185FA5',
+                        color: 'white',
+                        fontWeight: 600,
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        transition: '0.2s',
+                        boxShadow: '0 6px 15px rgba(24,95,165,0.3)'
                     } as React.CSSProperties}
                   >
                     Agregar

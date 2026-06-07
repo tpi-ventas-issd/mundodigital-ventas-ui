@@ -1,7 +1,17 @@
+:root {
+  font-family: Arial, sans-serif;
+  color: #000000;
+}
+
+h1, h2, h3, h4, h5, h6, p, li, span, label {
+  font-family: Arial, sans-serif;
+  color: #000000;
+}
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;
-  border-radius: 5px;
+  border-radius: 0;
   color: var(--accent);
   background: var(--accent-bg);
   border: 2px solid transparent;
@@ -118,7 +128,7 @@
   a {
     color: var(--text-h);
     font-size: 16px;
-    border-radius: 6px;
+    border-radius: 0;
     background: var(--social-bg);
     display: flex;
     padding: 6px 12px;
@@ -181,4 +191,11 @@
     right: 0;
     border-right-color: var(--border);
   }
+}
+
+button {
+  background: #185FA5 !important;
+  color: white !important;
+  border: none;
+  cursor: pointer;
 }

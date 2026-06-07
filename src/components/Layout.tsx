@@ -39,10 +39,10 @@ export function Layout() {
         {/* Brand */}
         <div style={{ padding: '0 20px 28px' }}>
           <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.12em', marginBottom: 6 }}>
-            MUNDODIGITAL S.A.
+            MUNDODIGITAL S.A. - Modulo de ventas
           </div>
           <div style={{ fontSize: 18, fontWeight: 500, color: 'var(--text)', lineHeight: 1.2 }}>
-            Ventas <span style={{ color: 'var(--accent)' }}>G1</span>
+             <span style={{ color: 'var(--accent)' }}>GRUPO 1</span>
           </div>
         </div>
 
