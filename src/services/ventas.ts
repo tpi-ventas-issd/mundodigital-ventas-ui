@@ -82,11 +82,7 @@ export const ventasService = {
   },
 
   async cancelarVenta(idventa: number): Promise<void> {
-      if (USE_MOCK) {
-        const v = MOCK_VENTAS.find(v => v.idventa === idventa)
-        if (v) v.estado = 'Cancelada'
-        return
-      }
+     
       await api.patch(`/ventas/${idventa}/cancelar`)
     },
  
