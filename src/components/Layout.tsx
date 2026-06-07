@@ -11,8 +11,8 @@ interface NavItem {
 const NAV: NavItem[] = [
   { path: '/ventas/nueva', label: 'Nueva Venta', icon: '＋' },
   { path: '/ventas',       label: 'Historial',   icon: '☰' },
-  { path: '/clientes',     label: 'Clientes',    icon: '◉' },
-  { path: '/clientes/registrar-cliente', label: 'Registrar Cliente', icon: '✎' },
+  { path: '/clientes/registrar',     label: 'Registrar Cliente',    icon: '✎' },
+   { path: '/clientes', label: 'Lista Clientes', icon: '☰' },
 ]
 
 
