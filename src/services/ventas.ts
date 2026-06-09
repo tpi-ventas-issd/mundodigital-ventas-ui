@@ -134,7 +134,7 @@ export const ventasService = {
           const precio = MOCK_PRODUCTOS.find(p => p.idproducto === d.idProducto)?.precio ?? 0
           return sum + d.cantidad * precio
         }, 0),
-        estado: 'Pendiente_de_entrega',
+        estado: 'Confirmada',
         direccionentrega: payload.direccionEntrega ?? undefined,
         indicacionesentrega: payload.indicacionesEntrega ?? undefined,
         detalleventas: payload.detalles.map((d, i) => {

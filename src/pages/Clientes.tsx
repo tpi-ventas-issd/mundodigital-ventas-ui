@@ -23,10 +23,13 @@ const FORM_INICIAL: ClienteForm = {
   nombre: '', apellido: '', direccion: '', telefono: '', email: ''
 }
 
+const OBLIGATORIOS: (keyof ClienteForm)[] = ['nombre', 'apellido', 'email']
+
 export function ClientesPage() {
   const [form, setForm]       = useState<ClienteForm>(FORM_INICIAL)
   const [loading, setLoading] = useState(false)
   const [toast, setToast]     = useState<{ msg: string; ok: boolean } | null>(null)
+  const [errores, setErrores] = useState<Partial<Record<keyof ClienteForm, boolean>>>({})
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok })
@@ -34,17 +37,30 @@ export function ClientesPage() {
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    setForm(prev => ({ ...prev, [name]: value }))
+    // Limpiar error del campo al escribir
+    if (errores[name as keyof ClienteForm]) {
+      setErrores(prev => ({ ...prev, [name]: false }))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    // Validación básica en el cliente
-    if (!form.nombre.trim() || !form.apellido.trim() || !form.email.trim()) {
-      showToast('Nombre, apellido y email son obligatorios.', false)
+    // Validación: detectar campos obligatorios vacíos
+    const nuevosErrores: Partial<Record<keyof ClienteForm, boolean>> = {}
+    OBLIGATORIOS.forEach(campo => {
+      if (!form[campo].trim()) nuevosErrores[campo] = true
+    })
+
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErrores(nuevosErrores)
+      showToast('Debe completar todos los campos obligatorios.', false)
       return
     }
+
+    setErrores({})
 
     setLoading(true)
     try {
@@ -71,6 +87,7 @@ export function ClientesPage() {
 
       showToast(`Cliente ${data.nombre} ${data.apellido} registrado correctamente.`, true)
       setForm(FORM_INICIAL)
+      setErrores({})
     } catch {
       showToast('No se pudo conectar con el servidor.', false)
     } finally {
@@ -122,28 +139,51 @@ export function ClientesPage() {
           display: 'grid', gap: 18,
         }}
       >
-        {CAMPOS.map(({ label, name, type, placeholder }) => (
-          <div key={name} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 13, color: '#444', fontWeight: 500 }}>{label}</label>
-            <input
-              type={type}
-              name={name}
-              placeholder={placeholder}
-              value={form[name]}
-              onChange={handleChange}
-              disabled={loading}
-              style={{ ...inputStyle, opacity: loading ? 0.6 : 1 }}
-              onFocus={e => {
-                e.currentTarget.style.border = '1px solid #111'
-                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,0,0,0.05)'
-              }}
-              onBlur={e => {
-                e.currentTarget.style.border = '1px solid #ddd'
-                e.currentTarget.style.boxShadow = 'none'
-              }}
-            />
-          </div>
-        ))}
+        {CAMPOS.map(({ label, name, type, placeholder }) => {
+          const obligatorio = OBLIGATORIOS.includes(name as keyof ClienteForm)
+          const tieneError  = !!errores[name as keyof ClienteForm]
+          return (
+            <div key={name} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <label style={{ fontSize: 13, color: tieneError ? '#dc2626' : '#444', fontWeight: 500 }}>
+                {label}
+                {obligatorio && (
+                  <span style={{ color: '#dc2626', marginLeft: 3 }}>*</span>
+                )}
+              </label>
+              <input
+                type={type}
+                name={name}
+                placeholder={placeholder}
+                value={form[name]}
+                onChange={handleChange}
+                disabled={loading}
+                style={{
+                  ...inputStyle,
+                  opacity: loading ? 0.6 : 1,
+                  border: tieneError ? '1px solid #dc2626' : '1px solid #ddd',
+                  boxShadow: tieneError ? '0 0 0 3px rgba(220,38,38,0.1)' : 'none',
+                }}
+                onFocus={e => {
+                  if (!tieneError) {
+                    e.currentTarget.style.border = '1px solid #111'
+                    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,0,0,0.05)'
+                  }
+                }}
+                onBlur={e => {
+                  if (!errores[name as keyof ClienteForm]) {
+                    e.currentTarget.style.border = '1px solid #ddd'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }
+                }}
+              />
+              {tieneError && (
+                <span style={{ fontSize: 12, color: '#dc2626' }}>
+                  Este campo es obligatorio.
+                </span>
+              )}
+            </div>
+          )
+        })}
 
         <button
           type="submit"
