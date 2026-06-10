@@ -294,7 +294,36 @@ export function NuevaVentaPage() {
           </Card>
 
           {/* Agregar productos */}
-          <Card title="Productos">
+          <Card
+            title="Productos"
+            action={lineas.length > 0
+              ? <button
+                  onClick={() => setLineas([])}
+                  style={{
+                    background: 'none',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    padding: '3px 10px',
+                    color: 'var(--muted)',
+                    fontSize: 11,
+                    fontFamily: 'var(--mono)',
+                    cursor: 'pointer',
+                    letterSpacing: '0.04em',
+                  }}
+                  onMouseOver={e => {
+                    e.currentTarget.style.color = '#dc2626'
+                    e.currentTarget.style.borderColor = '#dc262644'
+                  }}
+                  onMouseOut={e => {
+                    e.currentTarget.style.color = 'var(--muted)'
+                    e.currentTarget.style.borderColor = 'var(--border)'
+                  }}
+                >
+                  ✕ Vaciar
+                </button>
+              : undefined
+            }
+          >
             <div style={{ position: 'relative', marginBottom: lineas.length > 0 ? 16 : 0 }}>
               <input
                 placeholder="Buscar producto…"
@@ -442,7 +471,7 @@ export function NuevaVentaPage() {
                   ? (direccionEntrega.trim() || 'Sin indicar')
                   : (clienteSeleccionado?.direccion ?? 'Sin dirección')
               } />
-              <InfoRow label="Estado" value="Pendiente de entrega" color="var(--warn)" />
+              <InfoRow label="Estado" value="confirmada" color="var(--warn)" />
               <InfoRow label="Items" value={`${lineas.reduce((s, l) => s + l.cantidad, 0)} unidades`} />
             </div>
 
@@ -497,20 +526,23 @@ export function NuevaVentaPage() {
                   </div>
                   <button
                     onClick={() => agregarProducto(p)}
-                    disabled={p.stockactual === 0}
+                    disabled={p.stockactual === 0 || lineas.some(l => l.producto.idproducto === p.idproducto)}
                     style={{
-                      padding: '8px 12px',
-                      borderRadius: 8,
+                      marginTop: 6,
+                      padding: '6px 10px',
+                      borderRadius: 0,
                       border: 'none',
-                      background: p.stockactual === 0 ? 'var(--border)' : 'var(--surface)',
-                      color: p.stockactual === 0 ? 'var(--muted)' : 'var(--text)',
-                      cursor: p.stockactual === 0 ? 'not-allowed' : 'pointer',
-                      fontSize: 12,
+                      background: p.stockactual === 0 ? 'var(--surface2)' : '#185FA5',
+                      color: p.stockactual === 0 ? 'var(--border2)' : 'white',
                       fontWeight: 600,
-                      border2: '1px solid var(--border2)',
+                      fontSize: 14,
+                      cursor: p.stockactual === 0 ? 'not-allowed' : 'pointer',
+                      transition: '0.2s',
+                      boxShadow: p.stockactual === 0 ? 'none' : '0 6px 15px rgba(24,95,165,0.3)',
+                      opacity: p.stockactual === 0 ? 0.6 : 1,
                     } as React.CSSProperties}
                   >
-                    Agregar
+                    {p.stockactual === 0 ? 'Sin stock' : lineas.some(l => l.producto.idproducto === p.idproducto) ? 'Agregado' : 'Agregar'}
                   </button>
                 </div>
               </div>
@@ -609,7 +641,7 @@ function ConfirmacionView({
 
 // ─── Componentes auxiliares ─────────────────────────────────────────────────────
 
-function Card({ title, children }: { title: string; children: React.ReactNode }) {
+function Card({ title, children, action }: { title: string; children: React.ReactNode; action?: React.ReactNode }) {
   return (
     <div style={{
       background: 'var(--surface)',
@@ -617,8 +649,11 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
       borderRadius: 'var(--radius-lg)',
       padding: '20px 24px',
     }}>
-      <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em', marginBottom: 14 }}>
-        {title.toUpperCase()}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+        <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--muted)', letterSpacing: '0.1em' }}>
+          {title.toUpperCase()}
+        </div>
+        {action}
       </div>
       {children}
     </div>

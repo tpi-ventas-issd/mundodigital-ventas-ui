@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import type { Cliente, Producto, VentaRegistrada } from '../services/ventas'
 import { ventasService, formatPeso, formatFecha } from '../services/ventas'
 import { useToast } from '../components/Toast'
+import { api } from '../services/api'
 
 // ─── Colores de estado ──────────────────────────────────────────────────────────
 
 const estadoColor = (estado: string) => {
-  if (estado === 'Entregada') return { color: 'var(--success)', bg: '#3ecf6a18' }
-  if (estado === 'Cancelada') return { color: 'var(--danger)',  bg: '#f05b5b18' }
-  return { color: 'var(--warn)', bg: '#f0b45b18' } // Pendiente_de_entrega y cualquier otro
+  if (estado === 'Completada') return { color: '#16a34a', bg: '#16a34a18' }
+  if (estado === 'Cancelada')  return { color: '#dc2626', bg: '#dc262618' }
+  return { color: '#d97706', bg: '#d9770618' } // Confirmada
 }
 
 // ─── Modal de detalle ───────────────────────────────────────────────────────────
@@ -169,6 +170,12 @@ export function HistorialVentasPage() {
   const [cancelando, setCancelando] = useState(false)
   const [productos, setProductos] = useState<Producto[]>([])
 
+  // ── Filtros ──────────────────────────────────────────────────────────────────
+  const [busqueda, setBusqueda] = useState('')
+  const [filtroCliente, setFiltroCliente] = useState<number | ''>('')
+  const [filtroEstado, setFiltroEstado] = useState('')
+  const [filtroProducto, setFiltroProducto] = useState('')
+
   const cargar = () => {
     setLoading(true)
     Promise.all([
@@ -186,11 +193,30 @@ export function HistorialVentasPage() {
 
   useEffect(() => { cargar() }, [])
 
+
+
+// ─── cancelar a envio ───────────────────────────────────────────────────────────
+
   const handleCancelar = async () => {
     if (!ventaCancelar) return
     setCancelando(true)
     try {
+      // 1) Cancelar el envío ANTES de cancelar la venta
+      try {
+        const { data: envio } = await api.get(`/envios/venta/${ventaCancelar.idventa}`)
+        if (envio && envio.estado !== 'Cancelado' && envio.estado !== 'Entregado') {
+          await api.patch(`/envios/${envio.idenvio}/estado`, {
+            estadonuevo: 'Cancelado',
+            observaciones: 'Venta cancelada',
+          })
+        }
+      } catch {
+        // No hay envío asociado, se continúa igual
+      }
+
+      // 2) Cancelar la venta
       await ventasService.cancelarVenta(ventaCancelar.idventa)
+
       toast(`Venta #${ventaCancelar.idventa} cancelada`, 'success')
       setVentaCancelar(null)
       cargar()
@@ -200,6 +226,42 @@ export function HistorialVentasPage() {
       setCancelando(false)
     }
   }
+
+
+
+
+  // ── Ventas filtradas ─────────────────────────────────────────────────────────
+  const ventasFiltradas = ventas.filter(v => {
+    const texto = busqueda.trim().toLowerCase()
+    if (filtroCliente !== '' && v.idcliente !== filtroCliente) return false
+    if (filtroEstado && v.estado !== filtroEstado) return false
+    if (filtroProducto) {
+      const termProd = filtroProducto.toLowerCase()
+      const tieneProducto = (v.detalleventas ?? []).some(d => {
+        const nombre = productos.find(p => p.idproducto === d.idproducto)?.nombre ?? ''
+        return nombre.toLowerCase().includes(termProd)
+      })
+      if (!tieneProducto) return false
+    }
+    if (texto) {
+      const idMatch = String(v.idventa).includes(texto)
+      const c = clientes.find(c => c.idcliente === v.idcliente)
+      const clienteNombre = c ? `${c.nombre} ${c.apellido ?? ''}`.toLowerCase() : ''
+      const clienteMatch = clienteNombre.includes(texto)
+      const estadoMatch = v.estado.replace(/_/g, ' ').toLowerCase().includes(texto)
+      if (!idMatch && !clienteMatch && !estadoMatch) return false
+    }
+    return true
+  })
+
+  const limpiarFiltros = () => {
+    setBusqueda('')
+    setFiltroCliente('')
+    setFiltroEstado('')
+    setFiltroProducto('')
+  }
+
+  const hayFiltros = busqueda !== '' || filtroCliente !== '' || filtroEstado !== '' || filtroProducto !== ''
 
   const nombreCliente = (idcliente: number) => {
     const c = clientes.find(c => c.idcliente === idcliente)
@@ -224,12 +286,152 @@ export function HistorialVentasPage() {
         </button>
       </div>
 
+      {/* ── Barra de búsqueda y filtros ──────────────────────────────────────── */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* Búsqueda general */}
+        <div style={{ position: 'relative', flex: '1 1 220px', minWidth: 180 }}>
+          <span style={{
+            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+            color: 'var(--muted)', fontSize: 14, pointerEvents: 'none',
+          }}>🔍</span>
+          <input
+            type="text"
+            placeholder="Buscar por ID, cliente o estado…"
+            value={busqueda}
+            onChange={e => setBusqueda(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '9px 12px 9px 32px',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              color: 'var(--text)',
+              fontSize: 13,
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
+
+        {/* Filtro por cliente */}
+        <select
+          value={filtroCliente}
+          onChange={e => setFiltroCliente(e.target.value === '' ? '' : Number(e.target.value))}
+          style={{
+            padding: '9px 12px',
+            background: 'var(--surface)',
+            border: `1px solid ${filtroCliente !== '' ? 'var(--accent)' : 'var(--border)'}`,
+            borderRadius: 'var(--radius)',
+            color: filtroCliente !== '' ? 'var(--accent)' : 'var(--muted)',
+            fontSize: 13,
+            cursor: 'pointer',
+            outline: 'none',
+            minWidth: 160,
+          }}
+        >
+          <option value="">Todos los clientes</option>
+          {clientes
+            .slice()
+            .sort((a, b) => `${a.nombre} ${a.apellido ?? ''}`.localeCompare(`${b.nombre} ${b.apellido ?? ''}`))
+            .map(c => (
+              <option key={c.idcliente} value={c.idcliente}>
+                {`${c.nombre} ${c.apellido ?? ''}`.trim()}
+              </option>
+            ))}
+        </select>
+
+        {/* Filtro por estado */}
+        <select
+          value={filtroEstado}
+          onChange={e => setFiltroEstado(e.target.value)}
+          style={{
+            padding: '9px 12px',
+            background: 'var(--surface)',
+            border: `1px solid ${filtroEstado ? 'var(--accent)' : 'var(--border)'}`,
+            borderRadius: 'var(--radius)',
+            color: filtroEstado ? 'var(--accent)' : 'var(--muted)',
+            fontSize: 13,
+            cursor: 'pointer',
+            outline: 'none',
+            minWidth: 140,
+          }}
+        >
+          <option value="">Todos los estados</option>
+          <option value="Confirmada">Confirmada</option>
+          <option value="Entregada">Entregada</option>
+          <option value="Cancelada">Cancelada</option>
+        </select>
+
+        {/* Búsqueda por producto */}
+        <div style={{ position: 'relative', flex: '1 1 180px', minWidth: 160 }}>
+          <span style={{
+            position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+            color: 'var(--muted)', fontSize: 13, pointerEvents: 'none',
+          }}>📦</span>
+          <input
+            type="text"
+            placeholder="Buscar por producto…"
+            value={filtroProducto}
+            onChange={e => setFiltroProducto(e.target.value)}
+            style={{
+              width: '100%',
+              padding: '9px 12px 9px 32px',
+              background: 'var(--surface)',
+              border: `1px solid ${filtroProducto ? 'var(--accent)' : 'var(--border)'}`,
+              borderRadius: 'var(--radius)',
+              color: filtroProducto ? 'var(--text)' : 'var(--muted)',
+              fontSize: 13,
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
+
+        {/* Botón limpiar filtros */}
+        {hayFiltros && (
+          <button
+            onClick={limpiarFiltros}
+            style={{
+              padding: '9px 14px',
+              background: 'transparent',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius)',
+              color: 'var(--muted)',
+              fontSize: 12,
+              cursor: 'pointer',
+              fontFamily: 'var(--mono)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            ✕ Limpiar
+          </button>
+        )}
+      </div>
+
+      {/* Contador de resultados */}
+      {!loading && hayFiltros && (
+        <div style={{ marginBottom: 12, fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--mono)' }}>
+          {ventasFiltradas.length} resultado{ventasFiltradas.length !== 1 ? 's' : ''} de {ventas.length}
+        </div>
+      )}
+
       {loading ? (
         <div style={{ color: 'var(--muted)', fontFamily: 'var(--mono)', fontSize: 13 }}>Cargando…</div>
       ) : ventas.length === 0 ? (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '48px', textAlign: 'center', color: 'var(--muted)' }}>
           <div style={{ fontSize: 32, marginBottom: 12 }}>◎</div>
           <div>Aún no hay ventas registradas</div>
+        </div>
+      ) : ventasFiltradas.length === 0 ? (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '48px', textAlign: 'center', color: 'var(--muted)' }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>◎</div>
+          <div style={{ marginBottom: 10 }}>Sin resultados para los filtros aplicados</div>
+          <button
+            onClick={limpiarFiltros}
+            style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: 13 }}
+          >
+            Limpiar filtros
+          </button>
         </div>
       ) : (
         <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
@@ -244,9 +446,9 @@ export function HistorialVentasPage() {
               </tr>
             </thead>
             <tbody>
-              {ventas.map(v => {
+              {ventasFiltradas.map(v => {
                 const col = estadoColor(v.estado)
-                const cancelable = v.estado !== 'Cancelada' && v.estado !== 'Entregada'
+                const cancelable = v.estado !== 'Cancelada' && v.estado !== 'Completada'
                 return (
                   <tr
                     key={v.idventa}
@@ -264,7 +466,26 @@ export function HistorialVentasPage() {
                       {nombreCliente(v.idcliente)}
                     </td>
                     <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 12 }}>
-                      {(v.detalleventas ?? []).reduce((s, d) => s + d.cantidad, 0)} uds.
+                      {(() => {
+                        const detalles = v.detalleventas ?? []
+                        const totalUds = detalles.reduce((s, d) => s + d.cantidad, 0)
+                        const tooltipText = detalles.map(d => {
+                          const nombre = productos.find(p => p.idproducto === d.idproducto)?.nombre ?? `ID #${d.idproducto}`
+                          return `${nombre} ×${d.cantidad}`
+                        }).join('\n')
+                        return (
+                          <span
+                            title={tooltipText}
+                            style={{
+                              cursor: 'help',
+                              borderBottom: '1px dashed var(--border)',
+                              paddingBottom: 1,
+                            }}
+                          >
+                            {totalUds} uds.
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td style={{ padding: '12px 16px', fontFamily: 'var(--mono)', fontSize: 13, color: 'var(--accent)' }}>
                       {formatPeso(Number(v.total))}
