@@ -471,7 +471,7 @@ export function NuevaVentaPage() {
                   ? (direccionEntrega.trim() || 'Sin indicar')
                   : (clienteSeleccionado?.direccion ?? 'Sin dirección')
               } />
-              <InfoRow label="Estado" value="Pendiente de entrega" color="var(--warn)" />
+              <InfoRow label="Estado" value="confirmada" color="var(--warn)" />
               <InfoRow label="Items" value={`${lineas.reduce((s, l) => s + l.cantidad, 0)} unidades`} />
             </div>
 

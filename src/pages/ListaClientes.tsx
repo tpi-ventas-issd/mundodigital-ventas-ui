@@ -17,6 +17,9 @@ export function ListaClientesPage() {
   const [loading, setLoading]     = useState(false)
   const [guardando, setGuardando] = useState(false)
   const [toast, setToast]         = useState<{ msg: string; ok: boolean } | null>(null)
+  const [erroresModal, setErroresModal] = useState<Partial<Record<string, boolean>>>({})
+
+  const OBLIGATORIOS = ['nombre', 'apellido', 'email']
 
   const showToast = (msg: string, ok: boolean) => {
     setToast({ msg, ok })
@@ -37,9 +40,22 @@ export function ListaClientesPage() {
 
   const guardar = async () => {
     if (!editando) return
+
+    // Validar campos obligatorios
+    const nuevosErrores: Record<string, boolean> = {}
+    OBLIGATORIOS.forEach(campo => {
+      const val = editando[campo as keyof Cliente]
+      if (!val || !String(val).trim()) nuevosErrores[campo] = true
+    })
+    if (Object.keys(nuevosErrores).length > 0) {
+      setErroresModal(nuevosErrores)
+      showToast('Debe completar todos los campos obligatorios.', false)
+      return
+    }
+    setErroresModal({})
+
     setGuardando(true)
     try {
-      // Solo enviamos los campos que tienen valor (evita que @IsEmail falle con "")
       const payload = Object.fromEntries(
         Object.entries({
           nombre:    editando.nombre,
@@ -55,8 +71,16 @@ export function ListaClientesPage() {
       setEditando(null)
       showToast(`Cliente ${data.nombre} ${data.apellido} actualizado correctamente.`, true)
     } catch (err: any) {
-      const msg = err?.response?.data?.message ?? 'Error al actualizar el cliente.'
-      showToast(Array.isArray(msg) ? msg.join(', ') : msg, false)
+      const rawMsg = err?.response?.data?.message ?? 'Error al actualizar el cliente.'
+      const msg = Array.isArray(rawMsg) ? rawMsg.join(', ') : rawMsg
+      const esEmailDuplicado = msg.toLowerCase().includes('email') &&
+        (msg.toLowerCase().includes('exist') || msg.toLowerCase().includes('duplicad') || msg.toLowerCase().includes('ya est'))
+      if (esEmailDuplicado) {
+        setErroresModal({ email: true })
+        showToast('El email ingresado ya está registrado.', false)
+      } else {
+        showToast(msg, false)
+      }
     } finally {
       setGuardando(false)
     }
@@ -124,7 +148,7 @@ export function ListaClientesPage() {
                   <td style={{ padding: '11px 14px', fontSize: 13.5 }}>{c.telefono}</td>
                   <td style={{ padding: '11px 14px', fontSize: 13.5 }}>{c.direccion}</td>
                   <td style={{ padding: '11px 14px' }}>
-                    <button onClick={() => setEditando({ ...c })}
+                    <button onClick={() => { setEditando({ ...c }); setErroresModal({}) }}
                       style={{ border: '1px solid #ddd', background: 'transparent', borderRadius: 8, padding: '5px 8px', cursor: 'pointer', fontSize: 14 }}>
                       ✎
                     </button>
@@ -139,34 +163,56 @@ export function ListaClientesPage() {
       {/* Modal edición */}
       {editando && (
         <div
-          onClick={e => e.target === e.currentTarget && !guardando && setEditando(null)}
+          onClick={e => { if (e.target === e.currentTarget && !guardando) { setEditando(null); setErroresModal({}) } }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}
         >
           <div style={{ background: '#fff', borderRadius: 14, padding: 28, width: '100%', maxWidth: 440, border: '1px solid #eee' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 22 }}>
               <h2 style={{ fontSize: 17, fontWeight: 500, margin: 0 }}>Editar cliente</h2>
               <button
-                onClick={() => !guardando && setEditando(null)}
+                onClick={() => { if (!guardando) { setEditando(null); setErroresModal({}) } }}
                 disabled={guardando}
                 style={{ border: '1px solid #ddd', background: 'transparent', borderRadius: 8, padding: '4px 8px', cursor: guardando ? 'not-allowed' : 'pointer' }}
               >✕</button>
             </div>
 
-            {(['nombre', 'apellido', 'email', 'telefono', 'direccion'] as const).map(campo => (
-              <div key={campo} style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
-                <label style={{ fontSize: 12, fontWeight: 500, color: '#666', textTransform: 'capitalize' }}>{campo}</label>
-                <input
-                  value={editando[campo]}
-                  onChange={e => setEditando({ ...editando, [campo]: e.target.value })}
-                  disabled={guardando}
-                  style={{ ...inputStyle, opacity: guardando ? 0.6 : 1 }}
-                />
-              </div>
-            ))}
+            {(['nombre', 'apellido', 'email', 'telefono', 'direccion'] as const).map(campo => {
+              const tieneError = !!erroresModal[campo]
+              const obligatorio = OBLIGATORIOS.includes(campo)
+              const labelMap: Record<string, string> = {
+                nombre: 'Nombre', apellido: 'Apellido', email: 'Email',
+                telefono: 'Teléfono', direccion: 'Dirección',
+              }
+              return (
+                <div key={campo} style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
+                  <label style={{ fontSize: 12, fontWeight: 500, color: tieneError ? '#dc2626' : '#666' }}>
+                    {labelMap[campo]}
+                    {obligatorio && <span style={{ color: '#dc2626', marginLeft: 3 }}>*</span>}
+                  </label>
+                  <input
+                    value={editando[campo]}
+                    onChange={e => {
+                      setEditando({ ...editando, [campo]: e.target.value })
+                      if (erroresModal[campo]) setErroresModal(prev => ({ ...prev, [campo]: false }))
+                    }}
+                    disabled={guardando}
+                    style={{
+                      ...inputStyle,
+                      opacity: guardando ? 0.6 : 1,
+                      border: tieneError ? '1px solid #dc2626' : '1px solid #ddd',
+                      boxShadow: tieneError ? '0 0 0 3px rgba(220,38,38,0.1)' : 'none',
+                    }}
+                  />
+                  {tieneError && (
+                    <span style={{ fontSize: 12, color: '#dc2626' }}>Este campo es obligatorio.</span>
+                  )}
+                </div>
+              )
+            })}
 
             <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
               <button
-                onClick={() => setEditando(null)}
+                onClick={() => { setEditando(null); setErroresModal({}) }}
                 disabled={guardando}
                 style={{ padding: '11px 18px', borderRadius: 10, border: '1px solid #ddd', background: 'transparent', cursor: guardando ? 'not-allowed' : 'pointer', fontSize: 14 }}
               >

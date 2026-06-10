@@ -2,13 +2,14 @@ import { useEffect, useState } from 'react'
 import type { Cliente, Producto, VentaRegistrada } from '../services/ventas'
 import { ventasService, formatPeso, formatFecha } from '../services/ventas'
 import { useToast } from '../components/Toast'
+import { api } from '../services/api'
 
 // ─── Colores de estado ──────────────────────────────────────────────────────────
 
 const estadoColor = (estado: string) => {
-  if (estado === 'Entregada') return { color: 'var(--success)', bg: '#3ecf6a18' }
-  if (estado === 'Cancelada') return { color: 'var(--danger)',  bg: '#f05b5b18' }
-  return { color: 'var(--warn)', bg: '#f0b45b18' } // Pendiente_de_entrega y cualquier otro
+  if (estado === 'Completada') return { color: '#16a34a', bg: '#16a34a18' }
+  if (estado === 'Cancelada')  return { color: '#dc2626', bg: '#dc262618' }
+  return { color: '#d97706', bg: '#d9770618' } // Confirmada
 }
 
 // ─── Modal de detalle ───────────────────────────────────────────────────────────
@@ -197,39 +198,34 @@ export function HistorialVentasPage() {
 // ─── cancelar a envio ───────────────────────────────────────────────────────────
 
   const handleCancelar = async () => {
-  if (!ventaCancelar) return
-  setCancelando(true)
-  try {
-    await ventasService.cancelarVenta(ventaCancelar.idventa)
-    // Cancelar el envío asociado si existe
+    if (!ventaCancelar) return
+    setCancelando(true)
     try {
-      const envio = await fetch(
-        `${import.meta.env.VITE_API_URL}/envios/venta/${ventaCancelar.idventa}`
-      ).then(r => r.ok ? r.json() : null)
-
-      if (envio && envio.estado !== 'Cancelado' && envio.estado !== 'Entregado') {
-        await fetch(`${import.meta.env.VITE_API_URL}/envios/${envio.idenvio}/estado`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ estado: 'Cancelado' }),
-        })
+      // 1) Cancelar el envío ANTES de cancelar la venta
+      try {
+        const { data: envio } = await api.get(`/envios/venta/${ventaCancelar.idventa}`)
+        if (envio && envio.estado !== 'Cancelado' && envio.estado !== 'Entregado') {
+          await api.patch(`/envios/${envio.idenvio}/estado`, {
+            estadonuevo: 'Cancelado',
+            observaciones: 'Venta cancelada',
+          })
+        }
+      } catch {
+        // No hay envío asociado, se continúa igual
       }
-    } catch {
-      // No hay envío aún, no pasa nada
+
+      // 2) Cancelar la venta
+      await ventasService.cancelarVenta(ventaCancelar.idventa)
+
+      toast(`Venta #${ventaCancelar.idventa} cancelada`, 'success')
+      setVentaCancelar(null)
+      cargar()
+    } catch (e: any) {
+      toast(e.response?.data?.message ?? 'Error al cancelar', 'error')
+    } finally {
+      setCancelando(false)
     }
-
-    
-
-
-    toast(`Venta #${ventaCancelar.idventa} cancelada`, 'success')
-    setVentaCancelar(null)
-    cargar()
-  } catch (e: any) {
-    toast(e.response?.data?.message ?? 'Error al cancelar', 'error')
-  } finally {
-    setCancelando(false)
   }
-}
 
 
 
@@ -361,7 +357,7 @@ export function HistorialVentasPage() {
           }}
         >
           <option value="">Todos los estados</option>
-          <option value="Pendiente_de_entrega">Pendiente de entrega</option>
+          <option value="Confirmada">Confirmada</option>
           <option value="Entregada">Entregada</option>
           <option value="Cancelada">Cancelada</option>
         </select>
@@ -452,7 +448,7 @@ export function HistorialVentasPage() {
             <tbody>
               {ventasFiltradas.map(v => {
                 const col = estadoColor(v.estado)
-                const cancelable = v.estado !== 'Cancelada' && v.estado !== 'Entregada'
+                const cancelable = v.estado !== 'Cancelada' && v.estado !== 'Completada'
                 return (
                   <tr
                     key={v.idventa}
