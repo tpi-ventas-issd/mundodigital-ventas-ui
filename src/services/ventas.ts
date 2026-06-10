@@ -29,7 +29,28 @@ export interface RegistrarVentaPayload {
   detalles: DetalleVentaPayload[]
   direccionEntrega?: string | null
   indicacionesEntrega?: string | null
+  idCupon?: number | null
 }
+
+export interface Cupon {
+  idcupon: number
+  codigo: string
+  descuentoporcentaje: number
+  activo: boolean
+  fechavencimiento: string | null
+  idpromocion: number | null
+  idcliente: number | null
+  clientes: { idcliente: number; nombre: string; apellido: string; email: string } | null
+  promociones: {
+    idpromocion: number
+    nombre: string
+    detallepromocion?: Array<{     // ← agregar ?
+      idproducto: number | null
+      descuentoporcentaje: number
+    }>
+  } | null
+}
+
 
 export interface VentaRegistrada {
   idventa: number
@@ -159,6 +180,17 @@ export const ventasService = {
     if (USE_MOCK) return MOCK_VENTAS
     const { data } = await api.get<VentaRegistrada[]>('/ventas')
     return data
+  },
+
+  async getCupones(): Promise<Cupon[]> {
+    if (USE_MOCK) return []
+    const { data } = await api.get<Cupon[]>('/cupones')
+    return data
+  },
+
+  async marcarCuponUsado(idcupon: number): Promise<void> {
+    if (USE_MOCK) return
+    await api.patch(`/cupones/${idcupon}`, { activo: false })
   },
 }
 
