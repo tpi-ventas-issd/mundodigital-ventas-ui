@@ -39,7 +39,6 @@ export function NuevaVentaPage() {
   const [submitting, setSubmitting] = useState(false)
   const [ventaConfirmada, setVentaConfirmada] = useState<VentaRegistrada | null>(null)
   const [cupones, setCupones] = useState<Cupon[]>([])
-  const [cuponSeleccionado, setCuponSeleccionado] = useState<Cupon | null>(null)
   const [cuponesSeleccionados, setCuponesSeleccionados] = useState<Cupon[]>([])
   const cuponActivo = cuponesSeleccionados[0] ?? null
   const descuentoPct = cuponActivo?.descuentoporcentaje ?? 0
@@ -88,7 +87,7 @@ export function NuevaVentaPage() {
   const handleClienteChange = (id: number | null) => {
     setClienteId(id)
     setUsarOtraDireccion(false)
-    setCuponSeleccionado(null)
+    setCuponesSeleccionados([])
     const c = clientes.find(c => c.idcliente === id)
     setDireccionEntrega(c?.direccion ?? '')
     if (id) {
@@ -102,11 +101,6 @@ export function NuevaVentaPage() {
     }
   }
 
-  const toggleCupon = (cup: Cupon) => {
-    setCuponesSeleccionados(prev =>
-      prev.some(c => c.idcupon === cup.idcupon) ? [] : [cup]
-    )
-  }
 
   // Un cupón aplica si: es general (idproducto null en detallepromocion)
   // o si alguno de sus productos está en las lineas actuales
@@ -205,7 +199,6 @@ export function NuevaVentaPage() {
     ventasService.getProductos().then(setProductos)
     setIndicacionesEntrega('')
     setCupones([])
-    setCuponSeleccionado(null)
   }
 
   // ─── Confirmación ────────────────────────────────────────────────────────────
@@ -859,7 +852,6 @@ function ConfirmacionView({
   cuponUsado: Cupon | null
 }) {
   const cliente = clientes.find(c => c.idcliente === venta.idcliente)
-  const subtotalBruto = lineas.reduce((s, l) => s + l.cantidad * l.producto.precio, 0)
   const ahorro = lineas.reduce((sum, l) => {
     const detalles = cuponUsado?.promociones?.detallepromocion ?? []
     const esGeneral = !cuponUsado || detalles.length === 0 || detalles.some(d => d.idproducto === null)
